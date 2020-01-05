@@ -25,12 +25,10 @@ const createNamedContext = name => {
 };
 
 const TabsContext = createNamedContext("Tabs");
-const TabContext = createNamedContext("Tab");
-const TabPanelContext = createNamedContext("TabPanel");
 
 export const useTabState = () => {
-  const index = useContext(TabContext);
-  const { selectedIndex } = useContext(TabsContext);
+  const { selectedIndex, _getTabIndex } = useContext(TabsContext);
+  const [index] = useState(_getTabIndex);
 
   return {
     isSelected: index === selectedIndex
@@ -75,6 +73,9 @@ export const Tabs = forwardRef(function Tabs(
 
   const [selectedIndex, setSelectedIndex] = useState(defaultIndex || 0);
 
+  const tabIndexCount = useRef(0);
+  const tabPanelIndexCount = useRef(0);
+
   const tabsContext = React.useMemo(
     () => ({
       selectedIndex: isControlled ? controlledIndex : selectedIndex,
@@ -83,6 +84,17 @@ export const Tabs = forwardRef(function Tabs(
       _selectedPanelRef,
       _onFocusPanel: () =>
         _selectedPanelRef.current && _selectedPanelRef.current.focus(),
+      _registerTab: () => {
+        const tabIndex = tabIndexCount.current;
+        tabIndexCount.current += 1;
+        return tabIndex;
+      },
+      _registerTabPanel: () => {
+        const tabPanelIndex = tabPanelIndexCount.current;
+        tabPanelIndexCount.current += 1;
+        return tabPanelIndex;
+      },
+      _getTabIndex: () => tabIndexCount.current,
       _onSelectTab: readOnly
         ? () => {}
         : index => {
@@ -180,17 +192,13 @@ export const TabList = forwardRef(function TabList(
     }
   });
 
-  const wrappedChildren = React.Children.map(children, (child, index) => (
-    <TabContext.Provider value={index}>{child}</TabContext.Provider>
-  ));
-
   return (
     <Comp
       data-reach-tab-list=""
       ref={ref}
       role="tablist"
       onKeyDown={handleKeyDown}
-      children={wrappedChildren}
+      children={children}
       {...htmlProps}
     />
   );
@@ -210,10 +218,15 @@ export const Tab = forwardRef(function Tab(
   { children, as: Comp = "button", ...htmlProps },
   forwardedRef
 ) {
-  const index = useContext(TabContext);
-  const { selectedIndex, _onSelectTab, _userInteractedRef, _id } = useContext(
-    TabsContext
-  );
+  const {
+    selectedIndex,
+    _onSelectTab,
+    _userInteractedRef,
+    _id,
+    _registerTab
+  } = useContext(TabsContext);
+
+  const [index] = useState(_registerTab);
 
   const isSelected = index === selectedIndex;
 
@@ -262,16 +275,12 @@ export const TabPanels = forwardRef(function TabPanels(
   { children, as: Comp = "div", ...htmlAttrs },
   forwardedRef
 ) {
-  const wrappedChildren = React.Children.map(children, (child, index) => (
-    <TabPanelContext.Provider value={index}>{child}</TabPanelContext.Provider>
-  ));
-
   return (
     <Comp
       data-reach-tab-panels=""
       ref={forwardedRef}
       {...htmlAttrs}
-      children={wrappedChildren}
+      children={children}
     />
   );
 });
@@ -290,8 +299,14 @@ export const TabPanel = forwardRef(function TabPanel(
   { children, as: Comp = "div", ...htmlProps },
   forwardedRef
 ) {
-  const index = useContext(TabPanelContext);
-  const { selectedIndex, _selectedPanelRef, _id } = useContext(TabsContext);
+  const {
+    selectedIndex,
+    _selectedPanelRef,
+    _id,
+    _registerTabPanel
+  } = useContext(TabsContext);
+
+  const [index] = useState(_registerTabPanel);
   const isSelected = index === selectedIndex;
   const ref = useForkedRef(forwardedRef, isSelected ? _selectedPanelRef : null);
 
