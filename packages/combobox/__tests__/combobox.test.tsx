@@ -218,6 +218,45 @@ describe("<Combobox />", () => {
       expect(getByTestId("list")).toBeInTheDocument();
       expect(getByTextWithMarkup(optionToSelect)).toBeInTheDocument();
     });
+
+    it("should prevent popover close when input is cleared if openOnFocus is true", async () => {
+      let { getByRole, queryByRole } = render(<OpenOnFocusCombobox />);
+      let input = getByRole("combobox") as HTMLInputElement;
+
+      expect(queryByRole("listbox")).not.toBeInTheDocument();
+
+      await input.focus();
+
+      expect(getByRole("listbox")).toBeInTheDocument();
+
+      await userEvent.type(input, "e");
+
+      expect(getByRole("listbox")).toBeInTheDocument();
+
+      await userEvent.clear(input);
+
+      expect(getByRole("listbox")).toBeInTheDocument();
+
+      function OpenOnFocusCombobox() {
+        return (
+          <div>
+            <h4 id="demo">Basic, Fixed List Combobox</h4>
+            <Combobox aria-labelledby="demo" openOnFocus>
+              <ComboboxInput />
+              <ComboboxPopover>
+                <ComboboxList>
+                  <ComboboxOption value="Apple" />
+                  <ComboboxOption value="Banana" />
+                  <ComboboxOption value="Orange" />
+                  <ComboboxOption value="Pineapple" />
+                  <ComboboxOption value="Kiwi" />
+                </ComboboxList>
+              </ComboboxPopover>
+            </Combobox>
+          </div>
+        );
+      }
+    });
   });
 });
 

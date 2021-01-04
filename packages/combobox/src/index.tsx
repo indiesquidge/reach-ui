@@ -470,7 +470,8 @@ export const ComboboxInput = forwardRefWithAs<ComboboxInputProps, "input">(
 
     const handleValueChange = React.useCallback(
       (value: ComboboxValue) => {
-        if (value.trim() === "") {
+        // Prevent popover close when input is cleared if openOnFocus is true
+        if (value.trim() === "" && !openOnFocus) {
           transition(CLEAR);
         } else if (
           value === initialControlledValue &&
@@ -481,7 +482,7 @@ export const ComboboxInput = forwardRefWithAs<ComboboxInputProps, "input">(
           transition(CHANGE, { value });
         }
       },
-      [initialControlledValue, transition]
+      [initialControlledValue, transition, openOnFocus]
     );
 
     React.useEffect(() => {
